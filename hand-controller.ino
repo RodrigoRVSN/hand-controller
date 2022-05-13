@@ -3,8 +3,8 @@
 #include <Adafruit_PWMServoDriver.h>
 
 // Firebase Connection
-#include <ArduinoJson.h>
-#include <IOXhop_FirebaseESP32.h>
+#include <ESP8266WiFi.h>
+#include <FirebaseArduino.h>
 
 #define WIFI_SSID "WIFI ALUNOS"
 #define WIFI_PASSWORD "200897"
@@ -13,6 +13,12 @@
 // Firebase Connection
 
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+
+#define mindinho 7
+#define anelar 3
+#define meio 2
+#define indicador 1
+#define polegar 0
 
 //Defines para funcionamento do shield
 #define SERVOMIN  100
@@ -57,13 +63,13 @@ void setup() {
 
 void receiveData(){
     // TODO: Use this consts to manipulate the robot hand
-    float polegar = Firebase.getFloat("/mao/polegar");
-    float indicador = Firebase.getFloat("/mao/indicador");
-    float maior = Firebase.getFloat("/mao/maior");
-    float anelar = Firebase.getFloat("/mao/anelar");
-    float mindinho = Firebase.getFloat("/mao/mindinho");
+    float thumb_finger = Firebase.getFloat("/mao/polegar");
+    float indicator_finger = Firebase.getFloat("/mao/indicador");
+    float mid_finger = Firebase.getFloat("/mao/meio");
+    float ring_finger = Firebase.getFloat("/mao/anelar");
+    float pinky_finger = Firebase.getFloat("/mao/mindinho");
 
-    // TODO: change serial to data via firebase
+    // change serial to data via firebase
     while(Serial.available()){
         char serialContent = Serial.read();
         if(serialContent == '$') {
