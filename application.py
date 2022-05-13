@@ -1,4 +1,3 @@
-from distutils.command.sdist import sdist
 import cv2 as cv
 import time
 import os
