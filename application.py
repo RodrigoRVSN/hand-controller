@@ -1,36 +1,26 @@
 import cv2 as cv
-import time
-import os
 import hand_tracking as ht
+from api_request import FireRise 
 
 # Camera capture
 cap         = cv.VideoCapture(1)
 i           = 0
-tracking    = ht.handDetector(detectionCon=0.75)
+tracking    = ht.handDetector(detectionCon=0.75, maxHands=1)
 ids         = [4, 8, 12, 16, 20]
 
 if(cap.isOpened() == False):
     print("Error openning the video")
-else: 
-    # Frame rate info
-    fps = cap.get(5)
-    print('Frames per second: ', fps, 'FPS')
-
-    # Frame count
-    frame_count = cap.get(7)
-    print('Frame Count: ', frame_count)
-
 
 while(cap.isOpened()):
-    ret, frame  = cap.read()
-    contour     = tracking.findHands(frame)
-    pose        = tracking.findPosition(frame)
-    i          += 1
+    success, frame  = cap.read()
+    contour         = tracking.findHands(frame)
+    pose            = tracking.findPosition(frame)
+    i               += 1
 
     if len(pose) != 0:
         fingers = []
         
-        print(tracking.label)
+        #print(tracking.label)
 
         if tracking.label == 'Left':
             # hand Thumb -> Left
@@ -55,11 +45,14 @@ while(cap.isOpened()):
                 fingers.append(0)
         
         print(fingers)
+        api = FireRise("https://myhand-ff333-default-rtdb.firebaseio.com/", fingers)
+        api.putData("mao", True, None, fingers)
 
 
-    if ret:
+
+    if success:
         cv.imshow('Frame', frame)
-        key = cv.waitKey(20)
+        key = cv.waitKey(1)
 
         if key == ord('q'):
             break
