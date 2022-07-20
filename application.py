@@ -1,10 +1,11 @@
 import cv2 as cv
 import hand_tracking as ht
 from api_request import FireRise 
+from api_request import FireRise
 
 def videoCapture():
     # Camera capture
-    cap         = cv.VideoCapture(1)
+    cap         = cv.VideoCapture(2)
     i           = 0
     tracking    = ht.handDetector(detectionCon=0.75, maxHands=1)
     ids         = [4, 8, 12, 16, 20]
