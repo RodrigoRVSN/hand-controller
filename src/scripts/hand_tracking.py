@@ -1,6 +1,7 @@
+from turtle import pos
 import cv2 as cv
 import mediapipe as mp
-#from api_request import FireRise 
+from api_request import FireRise 
 
 class handDetector():
     # Parameters
@@ -25,7 +26,9 @@ class handDetector():
         self.hands              = self.mpHands.Hands(self.mode, self.maxHands, self.modelComplexity, self.detectionCon, self.trackCon)
         self.mpDraw             = mp.solutions.drawing_utils
 
-        self.hand               = "" # To transform list in a string
+        self.handFingers        = "0" # To transform list in a string
+        self.fingers            = [] # To storing fingers
+        self.side               = "" # Right/Left
         
     # To find hands in video
     def findHands(self, img, draw=True):
@@ -59,13 +62,56 @@ class handDetector():
         return lmList
 
     # Transforming list in a string
-    def deconstructionHand(self, tracking, fingers):
-        self.hand = ""
+    def deconstructionHand(self, tracking):
+        tracking.handFingers = ""
         if tracking.label == "Left" or tracking.label == "Right":
-            for i in range(len(fingers)):
-                self.hand += str(fingers[i])
-        return self.hand
+            for i in range(len(tracking.fingers)):
+                tracking.handFingers += str(tracking.fingers[i])
+        return tracking.handFingers
 
+
+    def handsLabel(pose, tracking, ids):
+
+        tracking.fingers = []
+
+        # There is a hand in the frame
+        if len(pose) != 0:
+            
+            # Finding the hand's label
+            if tracking.label == 'Left':
+                # hand Thumb -> Left
+                if pose[ids[0]][1] > pose[ids[0] - 1][1]:
+                        tracking.fingers.append(1)
+                else: 
+                    tracking.fingers.append(0)
+
+            elif tracking.label == 'Right':
+                # hand Thumb -> Right
+                if pose[ids[0]][1] < pose[ids[0] - 1][1]:
+                        tracking.fingers.append(1)
+                else: 
+                    tracking.fingers.append(0)
+
+            # 4 Fingers
+            for id in range(1, 5):
+                # Check finger reference points to define hand is open or not
+                if pose[ids[id]][2] < pose[ids[id] - 2][2]:
+                    tracking.fingers.append(1)
+                else: 
+                    tracking.fingers.append(0)
+            
+            print(tracking.label, tracking.fingers)
+
+            # Decosntruction of List to String
+            tracking.handFingers = tracking.deconstructionHand(tracking)
+            tracking.side        = tracking.label
+        
+        return tracking.handFingers
+
+    # Send data to api 
+    def sendToApi(tracking):
+        api = FireRise("https://myhand-ff333-default-rtdb.firebaseio.com/", tracking.fingers)
+        api.putData("mao", True, None, tracking.fingers)
 
 
 def videoCapture():
@@ -75,7 +121,6 @@ def videoCapture():
     tracking    = handDetector(detectionCon=0.75, maxHands=2)
     # Hand landmarks 
     ids         = [4, 8, 12, 16, 20]
-    handOption  = ""
 
     # Verify camera errors
     if(cap.isOpened() == False):
@@ -88,48 +133,17 @@ def videoCapture():
         pose            = tracking.findPosition(frame)
         i               += 1
 
-        # There is a hand in the frame
-        if len(pose) != 0:
-            fingers = []
-            
-            # Finding the hand's label
-            if tracking.label == 'Left':
-                # hand Thumb -> Left
-                if pose[ids[0]][1] > pose[ids[0] - 1][1]:
-                        fingers.append(1)
-                else: 
-                    fingers.append(0)
-
-            elif tracking.label == 'Right':
-                # hand Thumb -> Right
-                if pose[ids[0]][1] < pose[ids[0] - 1][1]:
-                        fingers.append(1)
-                else: 
-                    fingers.append(0)
-
-            # 4 Fingers
-            for id in range(1, 5):
-                # Check finger reference points to define hand is open or not
-                if pose[ids[id]][2] < pose[ids[id] - 2][2]:
-                    fingers.append(1)
-                else: 
-                    fingers.append(0)
-            
-            print(tracking.label, fingers)
-            """
-            # Send data to api 
-            api = FireRise("https://myhand-ff333-default-rtdb.firebaseio.com/", fingers)
-            api.putData("mao", True, None, fingers) """
-
-            # Decosntruction of List to String
-            handOption = handDetector.deconstructionHand(handDetector, tracking, fingers)
+        # Detection and decosntruction of List to String
+        handDetector.handsLabel(pose, tracking, ids)
 
         if success:
-            cv.imshow('Frame', cv.flip(frame, 1))
+            font = cv.FONT_HERSHEY_COMPLEX
+            cv.putText(frame, "Ola", (50,50), font, 1, (0,0,255), 2)
+            cv.imshow('Frame', frame)
             key = cv.waitKey(1)
-            
+
             # Exit by user hand
-            if handOption == "01100":
+            if tracking.handFingers == "01100":
                 break 
 
             # Exit by user using keyboard
