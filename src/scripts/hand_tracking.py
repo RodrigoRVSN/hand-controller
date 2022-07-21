@@ -26,7 +26,7 @@ class handDetector():
         self.mpDraw             = mp.solutions.drawing_utils
 
         self.hand               = "" # To transform list in a string
-
+        
     # To find hands in video
     def findHands(self, img, draw=True):
         imgRGB = cv.cvtColor(img, cv.COLOR_BGR2RGB)
@@ -132,7 +132,7 @@ def videoCapture():
             if handOption == "01100":
                 break 
 
-            # Exit by user e
+            # Exit by user using keyboard
             if key == ord('q'):
                 break
         else:
